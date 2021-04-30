@@ -29,7 +29,10 @@ public class Controller {
 
     @GetMapping("/status")
     public ResponseEntity<NetworkStatusDto> getNetworkStatus(/*@RequestParam("network") String networkName*/) {
-        Network network = Network.IVAO;
+        String networkName = "IVAO";
+        log.debug("Status request for {}: requested...", networkName);
+
+        Network network = Network.valueOf(networkName);
 
         NetworkStatusDto result = new NetworkStatusDto();
 
@@ -100,6 +103,8 @@ public class Controller {
         result.setCurrentStatusCode(statusCode);
         result.setCurrentStatusMessage(statusMessage);
         result.setCurrentStatusDetails(statusDetails);
+
+        log.info("Status request for {}: loaded report {}, pilots online {}", networkName, reportDt, reportPilotPositions.size());
 
         return ResponseEntity.ok(result);
     }
