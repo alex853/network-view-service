@@ -3,10 +3,20 @@ package net.simforge.networkview.map;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.simforge.commons.misc.JavaTime;
+import net.simforge.networkview.core.Network;
+import net.simforge.networkview.core.Position;
+import net.simforge.networkview.core.report.ReportUtils;
+import net.simforge.networkview.core.report.persistence.Report;
+import net.simforge.networkview.core.report.persistence.ReportPilotPosition;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.Database;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.web.bind.annotation.*;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -57,9 +67,9 @@ public class Controller {
                 .getResultList();
         List<PilotPositionDto> pilotPositionDtos = new ArrayList<>();
         for (ReportPilotPosition reportPilotPosition : reportPilotPositions) {
-//            Position position = Position.create(reportPilotPosition);
+            Position position = Position.create(reportPilotPosition);
 
-            PilotPositionDto pilotPositionDto = DtoHelper.getPilotPositionDto(reportPilotPosition/*, position*/);
+            PilotPositionDto pilotPositionDto = DtoHelper.getPilotPositionDto(reportPilotPosition, position);
 
             pilotPositionDtos.add(pilotPositionDto);
         }
@@ -108,5 +118,4 @@ public class Controller {
 
         return ResponseEntity.ok(result);
     }
-
 }
