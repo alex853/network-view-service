@@ -8,15 +8,13 @@ import net.simforge.networkview.core.Position;
 import net.simforge.networkview.core.report.ReportUtils;
 import net.simforge.networkview.core.report.persistence.Report;
 import net.simforge.networkview.core.report.persistence.ReportPilotPosition;
-import org.springframework.context.annotation.Bean;
 import org.springframework.http.ResponseEntity;
-import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
-import org.springframework.orm.jpa.vendor.Database;
-import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -35,6 +33,15 @@ public class Controller {
     @GetMapping("/hello-world")
     public String getHelloWorld() {
         return "Hello, World!";
+    }
+
+    @GetMapping("memory-status")
+    public MemoryStats getMemoryStatistics() {
+        MemoryStats stats = new MemoryStats();
+        stats.setTotalMemory(Runtime.getRuntime().totalMemory());
+        stats.setMaxMemory(Runtime.getRuntime().maxMemory());
+        stats.setFreeMemory(Runtime.getRuntime().freeMemory());
+        return stats;
     }
 
     @GetMapping("/status")
