@@ -32,7 +32,8 @@ public class Controller {
 
     @GetMapping("/status")
     public ResponseEntity<NetworkStatusDto> getNetworkStatus(/*@RequestParam("network") String networkName*/) {
-        // todo AK what if network status is null ?
-        return ResponseEntity.ok(NetworkStatus.get());
+        return NetworkStatus.get()
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.badRequest().build());
     }
 }

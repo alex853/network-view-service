@@ -20,6 +20,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 @Component
@@ -44,18 +45,22 @@ public class NetworkStatusRefresher {
                 .setMaxResults(1)
                 .getSingleResult();
 
-        NetworkStatusDto loadedStatus = NetworkStatus.get();
-        if (loadedStatus != null) {
-            boolean reportsAreEquals = loadedStatus.getCurrentReport().equals(report.getReport());
+        Optional<NetworkStatusDto> loadedStatus = NetworkStatus.get();
+        if (loadedStatus.isPresent()) {
+            String loadedReport = loadedStatus.get().getCurrentReport();
+            String newReport = report.getReport();
+
+            boolean reportsAreEquals = loadedReport.equals(newReport);
             if (reportsAreEquals) {
                 log.trace("Status refresh for {}: no new report found", networkName);
                 return;
             }
-            boolean newReportIsGreater = loadedStatus.getCurrentReport().compareTo(report.getReport()) < 0;
+
+            boolean newReportIsGreater = loadedReport.compareTo(newReport) < 0;
             if (newReportIsGreater) {
-                log.debug("Status refresh for {}: new report {} found - loading...", networkName, report.getReport());
+                log.debug("Status refresh for {}: new report {} found - loading...", networkName, newReport);
             } else {
-                log.warn("Status refresh for {}: wrong report {} found - skipped", networkName, report.getReport());
+                log.warn("Status refresh for {}: wrong report {} found - skipped", networkName, newReport);
                 return;
             }
         } else {

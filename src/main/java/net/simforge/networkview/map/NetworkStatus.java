@@ -2,14 +2,17 @@ package net.simforge.networkview.map;
 
 import net.simforge.networkview.map.dto.NetworkStatusDto;
 
-public class NetworkStatus {
-    private static NetworkStatusDto networkStatusDto;
+import java.util.Optional;
 
-    public static synchronized NetworkStatusDto get() {
-        return networkStatusDto;
+public class NetworkStatus {
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+    private static Optional<NetworkStatusDto> networkStatus = Optional.empty();
+
+    public static synchronized Optional<NetworkStatusDto> get() {
+        return networkStatus;
     }
 
     public static synchronized void set(NetworkStatusDto networkStatusDto) {
-        NetworkStatus.networkStatusDto = networkStatusDto;
+        NetworkStatus.networkStatus = Optional.of(networkStatusDto);
     }
 }
