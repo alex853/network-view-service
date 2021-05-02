@@ -1,4 +1,4 @@
-package net.simforge.networkview.map;
+package net.simforge.networkview.map.dto;
 
 import lombok.Data;
 import net.simforge.commons.misc.Geo;

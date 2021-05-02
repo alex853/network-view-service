@@ -1,4 +1,4 @@
-package net.simforge.networkview.map;
+package net.simforge.networkview.map.dto;
 
 import net.simforge.networkview.core.Position;
 import net.simforge.networkview.core.report.ParsingLogics;
