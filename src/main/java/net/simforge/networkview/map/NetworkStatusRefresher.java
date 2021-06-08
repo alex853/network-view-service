@@ -1,6 +1,5 @@
 package net.simforge.networkview.map;
 
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.simforge.commons.misc.JavaTime;
 import net.simforge.networkview.core.Network;
@@ -11,6 +10,8 @@ import net.simforge.networkview.core.report.persistence.ReportPilotPosition;
 import net.simforge.networkview.map.dto.DtoHelper;
 import net.simforge.networkview.map.dto.NetworkStatusDto;
 import net.simforge.networkview.map.dto.PilotPositionDto;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -25,16 +26,23 @@ import java.util.concurrent.TimeUnit;
 
 @Component
 @Slf4j
-@AllArgsConstructor
 public class NetworkStatusRefresher {
-    private final EntityManager entityManager;
+    @Autowired
+    @Qualifier("vatsimEntityManager")
+    private EntityManager vatsimEntityManager;
+
+    @Autowired
+    @Qualifier("ivaoEntityManager")
+    private EntityManager ivaoEntityManager;
 
     @Scheduled(fixedRate = 1000)
     public void refresh() {
-        String networkName = "IVAO";
-        log.trace("Status refresh for {}: started...", networkName);
+        loadNetworkStatus(Network.VATSIM, vatsimEntityManager);
+        loadNetworkStatus(Network.IVAO, ivaoEntityManager);
+    }
 
-        Network network = Network.valueOf(networkName);
+    private void loadNetworkStatus(Network network, EntityManager entityManager) {
+        log.trace("Status refresh for {}: started...", network.name());
 
         String nowTimestamp = ReportUtils.toTimestamp(JavaTime.nowUtc());
 
@@ -45,26 +53,26 @@ public class NetworkStatusRefresher {
                 .setMaxResults(1)
                 .getSingleResult();
 
-        Optional<NetworkStatusDto> loadedStatus = NetworkStatus.get();
+        Optional<NetworkStatusDto> loadedStatus = NetworkStatus.get(network);
         if (loadedStatus.isPresent()) {
             String loadedReport = loadedStatus.get().getCurrentReport();
             String newReport = report.getReport();
 
             boolean reportsAreEquals = loadedReport.equals(newReport);
             if (reportsAreEquals) {
-                log.trace("Status refresh for {}: no new report found", networkName);
+                log.trace("Status refresh for {}: no new report found", network.name());
                 return;
             }
 
             boolean newReportIsGreater = loadedReport.compareTo(newReport) < 0;
             if (newReportIsGreater) {
-                log.debug("Status refresh for {}: new report {} found - loading...", networkName, newReport);
+                log.debug("Status refresh for {}: new report {} found - loading...", network.name(), newReport);
             } else {
-                log.warn("Status refresh for {}: wrong report {} found - skipped", networkName, newReport);
+                log.warn("Status refresh for {}: wrong report {} found - skipped", network.name(), newReport);
                 return;
             }
         } else {
-            log.debug("Status refresh for {}: new report {} found as there is no status loaded before - loading...", networkName, report.getReport());
+            log.debug("Status refresh for {}: new report {} found as there is no status loaded before - loading...", network.name(), report.getReport());
         }
 
         NetworkStatusDto newStatus = new NetworkStatusDto();
@@ -125,8 +133,8 @@ public class NetworkStatusRefresher {
         newStatus.setCurrentStatusMessage(statusMessage);
         newStatus.setCurrentStatusDetails(statusDetails);
 
-        log.info("Status refresh for {}: new report {} loaded, pilots online {}", networkName, report.getReport(), reportPilotPositions.size());
+        log.info("Status refresh for {}: new report {} loaded, pilots online {}", network.name(), report.getReport(), reportPilotPositions.size());
 
-        NetworkStatus.set(newStatus);
+        NetworkStatus.set(network, newStatus);
     }
 }

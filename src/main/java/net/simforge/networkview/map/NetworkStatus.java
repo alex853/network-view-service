@@ -1,18 +1,20 @@
 package net.simforge.networkview.map;
 
+import net.simforge.networkview.core.Network;
 import net.simforge.networkview.map.dto.NetworkStatusDto;
 
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class NetworkStatus {
-    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    private static Optional<NetworkStatusDto> networkStatus = Optional.empty();
+    private static final Map<Network, NetworkStatusDto> networkStatuses = new ConcurrentHashMap<>();
 
-    public static synchronized Optional<NetworkStatusDto> get() {
-        return networkStatus;
+    public static synchronized Optional<NetworkStatusDto> get(Network network) {
+        return Optional.ofNullable(networkStatuses.get(network));
     }
 
-    public static synchronized void set(NetworkStatusDto networkStatusDto) {
-        NetworkStatus.networkStatus = Optional.of(networkStatusDto);
+    public static synchronized void set(Network network, NetworkStatusDto networkStatusDto) {
+        networkStatuses.put(network, networkStatusDto);
     }
 }

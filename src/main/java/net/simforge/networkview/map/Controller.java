@@ -2,13 +2,11 @@ package net.simforge.networkview.map;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.simforge.networkview.core.Network;
 import net.simforge.networkview.map.dto.MemoryStatsDto;
 import net.simforge.networkview.map.dto.NetworkStatusDto;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("service/v1")
@@ -16,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 @AllArgsConstructor
 public class Controller {
-    @GetMapping("/hello-world")
+    @GetMapping("hello-world")
     public String getHelloWorld() {
         return "Hello, World!";
     }
@@ -30,9 +28,10 @@ public class Controller {
         return stats;
     }
 
-    @GetMapping("/status")
-    public ResponseEntity<NetworkStatusDto> getNetworkStatus(/*@RequestParam("network") String networkName*/) {
-        return NetworkStatus.get()
+    @GetMapping("status")
+    public ResponseEntity<NetworkStatusDto> getNetworkStatus(@RequestParam("network") String networkName) {
+        Network network = Network.valueOf(networkName);
+        return NetworkStatus.get(network)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.badRequest().build());
     }
