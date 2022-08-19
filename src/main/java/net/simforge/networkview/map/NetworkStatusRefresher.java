@@ -61,6 +61,7 @@ public class NetworkStatusRefresher {
             boolean reportsAreEquals = loadedReport.equals(newReport);
             if (reportsAreEquals) {
                 log.trace("Status refresh for {}: no new report found", network.name());
+                actualizeCurrentStatusFields(loadedStatus.get());
                 return;
             }
 
@@ -69,12 +70,60 @@ public class NetworkStatusRefresher {
                 log.debug("Status refresh for {}: new report {} found - loading...", network.name(), newReport);
             } else {
                 log.warn("Status refresh for {}: wrong report {} found - skipped", network.name(), newReport);
+                actualizeCurrentStatusFields(loadedStatus.get());
                 return;
             }
         } else {
             log.debug("Status refresh for {}: new report {} found as there is no status loaded before - loading...", network.name(), report.getReport());
         }
 
+        NetworkStatusDto newStatus = buildNetworkStatus(network, entityManager, report);
+        actualizeCurrentStatusFields(newStatus);
+        log.info("Status refresh for {}: new report {} loaded, pilots online {}", network.name(), report.getReport(), newStatus.getPilotPositions().size());
+        NetworkStatus.set(network, newStatus);
+    }
+
+    private void actualizeCurrentStatusFields(NetworkStatusDto networkStatus) {
+        LocalDateTime reportDt = ReportUtils.fromTimestampJava(networkStatus.getCurrentReport());
+        long timeDifferenceMillis = JavaTime.nowUtc().toEpochSecond(ZoneOffset.UTC) - reportDt.toEpochSecond(ZoneOffset.UTC);
+        long timeDifference = timeDifferenceMillis / TimeUnit.MINUTES.toMillis(1);
+
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+
+        String statusCode;
+        String statusMessage;
+        String statusDetails;
+
+        if (timeDifference < 5) {
+            statusCode = "OK";
+            statusMessage = String.format("%s flights online", networkStatus.getPilotPositions().size());
+            switch ((int) timeDifference) {
+                case 0:
+                    statusDetails = String.format("Report %s, it is actual data", timeFormatter.format(reportDt));
+                    break;
+                case 1:
+                    statusDetails = String.format("Report %s, it is actual data", timeFormatter.format(reportDt));
+                    break;
+                default:
+                    statusDetails = String.format("Report %s, it is %s minutes behind", timeFormatter.format(reportDt), timeDifference);
+                    break;
+            }
+        } else if (timeDifference < 15) {
+            statusCode = "GAP";
+            statusMessage = String.format("%s flights online", networkStatus.getPilotPositions().size());
+            statusDetails = String.format("It seems like there is a GAP in reports. Last report %s, it is %s minutes behind", timeFormatter.format(reportDt), timeDifference);
+        } else {
+            statusCode = "OUTDATED";
+            statusMessage = "Outdated positions";
+            statusDetails = String.format("Data feed is down most probably. Last report %s, it is %s minutes behind", timeFormatter.format(reportDt), timeDifference);
+        }
+
+        networkStatus.setCurrentStatusCode(statusCode);
+        networkStatus.setCurrentStatusMessage(statusMessage);
+        networkStatus.setCurrentStatusDetails(statusDetails);
+    }
+
+    private NetworkStatusDto buildNetworkStatus(Network network, EntityManager entityManager, Report report) {
         NetworkStatusDto newStatus = new NetworkStatusDto();
         newStatus.setNetwork(network.name());
         newStatus.setCurrentReport(report.getReport());
@@ -93,48 +142,6 @@ public class NetworkStatusRefresher {
             pilotPositionDtos.add(pilotPositionDto);
         }
         newStatus.setPilotPositions(pilotPositionDtos);
-
-
-        LocalDateTime reportDt = ReportUtils.fromTimestampJava(report.getReport());
-        long timeDifferenceMillis = JavaTime.nowUtc().toEpochSecond(ZoneOffset.UTC) - reportDt.toEpochSecond(ZoneOffset.UTC);
-        long timeDifference = timeDifferenceMillis / TimeUnit.MINUTES.toMillis(1);
-
-        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
-
-        String statusCode;
-        String statusMessage;
-        String statusDetails;
-
-        if (timeDifference < 5) {
-            statusCode = "OK";
-            statusMessage = String.format("%s flights online", reportPilotPositions.size());
-            switch ((int) timeDifference) {
-                case 0:
-                    statusDetails = String.format("Report %s, it is actual data", timeFormatter.format(reportDt));
-                    break;
-                case 1:
-                    statusDetails = String.format("Report %s, it is actual data", timeFormatter.format(reportDt));
-                    break;
-                default:
-                    statusDetails = String.format("Report %s, it is %s minutes behind", timeFormatter.format(reportDt), timeDifference);
-                    break;
-            }
-        } else if (timeDifference < 15) {
-            statusCode = "GAP";
-            statusMessage = String.format("%s flights online", reportPilotPositions.size());
-            statusDetails = String.format("It seems like there is a GAP in reports. Last report %s, it is %s minutes behind", timeFormatter.format(reportDt), timeDifference);
-        } else {
-            statusCode = "OUTDATED";
-            statusMessage = "Outdated positions";
-            statusDetails = String.format("Data feed is down most probably. Last report %s, it is %s minutes behind", timeFormatter.format(reportDt), timeDifference);
-        }
-
-        newStatus.setCurrentStatusCode(statusCode);
-        newStatus.setCurrentStatusMessage(statusMessage);
-        newStatus.setCurrentStatusDetails(statusDetails);
-
-        log.info("Status refresh for {}: new report {} loaded, pilots online {}", network.name(), report.getReport(), reportPilotPositions.size());
-
-        NetworkStatus.set(network, newStatus);
+        return newStatus;
     }
 }
