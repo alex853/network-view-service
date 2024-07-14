@@ -31,14 +31,14 @@ public class NetworkStatusRefresher {
     @Qualifier("vatsimEntityManager")
     private EntityManager vatsimEntityManager;
 
-    @Autowired
-    @Qualifier("ivaoEntityManager")
-    private EntityManager ivaoEntityManager;
+//ivao disabled    @Autowired
+//ivao disabled    @Qualifier("ivaoEntityManager")
+//ivao disabled    private EntityManager ivaoEntityManager;
 
     @Scheduled(fixedRate = 1000)
     public void refresh() {
         loadNetworkStatus(Network.VATSIM, vatsimEntityManager);
-        loadNetworkStatus(Network.IVAO, ivaoEntityManager);
+//ivao disabled        loadNetworkStatus(Network.IVAO, ivaoEntityManager);
     }
 
     private void loadNetworkStatus(Network network, EntityManager entityManager) {
@@ -87,6 +87,7 @@ public class NetworkStatusRefresher {
         LocalDateTime reportDt = ReportUtils.fromTimestampJava(networkStatus.getCurrentReport());
         long timeDifferenceMillis = JavaTime.nowUtc().toEpochSecond(ZoneOffset.UTC) - reportDt.toEpochSecond(ZoneOffset.UTC);
         long timeDifference = timeDifferenceMillis / TimeUnit.MINUTES.toMillis(1);
+        log.debug("timeDifferenceMillis {}, timeDifference {}, timeUnit {}", timeDifferenceMillis, timeDifference, TimeUnit.MINUTES.toMillis(1));
 
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
 
