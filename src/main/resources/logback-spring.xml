@@ -22,11 +22,11 @@
         </encoder>
     </appender>
 
-    <logger name="net.simforge" level="ALL"/>
+    <logger name="net.simforge" level="TRACE"/>
 
     <logger name="org.hibernate" level="INFO"/>
 
-    <root level="ALL">
+    <root level="INFO">
         <appender-ref ref="STDOUT"/>
         <appender-ref ref="FILE"/>
     </root>
