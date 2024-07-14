@@ -85,9 +85,9 @@ public class NetworkStatusRefresher {
 
     private void actualizeCurrentStatusFields(NetworkStatusDto networkStatus) {
         LocalDateTime reportDt = ReportUtils.fromTimestampJava(networkStatus.getCurrentReport());
-        long timeDifferenceMillis = JavaTime.nowUtc().toEpochSecond(ZoneOffset.UTC) - reportDt.toEpochSecond(ZoneOffset.UTC);
-        long timeDifference = timeDifferenceMillis / TimeUnit.MINUTES.toMillis(1);
-        log.debug("timeDifferenceMillis {}, timeDifference {}, timeUnit {}", timeDifferenceMillis, timeDifference, TimeUnit.MINUTES.toMillis(1));
+        long timeDifferenceSeconds = JavaTime.nowUtc().toEpochSecond(ZoneOffset.UTC) - reportDt.toEpochSecond(ZoneOffset.UTC);
+        long timeDifferenceMinutes = timeDifferenceSeconds / 60;
+        log.debug("timeDifferenceSeconds {}, timeDifferenceMinutes {}, timeUnit {}", timeDifferenceSeconds, timeDifferenceMinutes, TimeUnit.MINUTES.toMillis(1));
 
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
 
@@ -95,10 +95,10 @@ public class NetworkStatusRefresher {
         String statusMessage;
         String statusDetails;
 
-        if (timeDifference < 5) {
+        if (timeDifferenceMinutes < 5) {
             statusCode = "OK";
             statusMessage = String.format("%s flights online", networkStatus.getPilotPositions().size());
-            switch ((int) timeDifference) {
+            switch ((int) timeDifferenceMinutes) {
                 case 0:
                     statusDetails = String.format("Report %s, it is actual data", timeFormatter.format(reportDt));
                     break;
@@ -106,17 +106,17 @@ public class NetworkStatusRefresher {
                     statusDetails = String.format("Report %s, it is actual data", timeFormatter.format(reportDt));
                     break;
                 default:
-                    statusDetails = String.format("Report %s, it is %s minutes behind", timeFormatter.format(reportDt), timeDifference);
+                    statusDetails = String.format("Report %s, it is %s minutes behind", timeFormatter.format(reportDt), timeDifferenceMinutes);
                     break;
             }
-        } else if (timeDifference < 15) {
+        } else if (timeDifferenceMinutes < 15) {
             statusCode = "GAP";
             statusMessage = String.format("%s flights online", networkStatus.getPilotPositions().size());
-            statusDetails = String.format("It seems like there is a GAP in reports. Last report %s, it is %s minutes behind", timeFormatter.format(reportDt), timeDifference);
+            statusDetails = String.format("It seems like there is a GAP in reports. Last report %s, it is %s minutes behind", timeFormatter.format(reportDt), timeDifferenceMinutes);
         } else {
             statusCode = "OUTDATED";
             statusMessage = "Outdated positions";
-            statusDetails = String.format("Data feed is down most probably. Last report %s, it is %s minutes behind", timeFormatter.format(reportDt), timeDifference);
+            statusDetails = String.format("Data feed is down most probably. Last report %s, it is %s minutes behind", timeFormatter.format(reportDt), timeDifferenceMinutes);
         }
 
         networkStatus.setCurrentStatusCode(statusCode);
