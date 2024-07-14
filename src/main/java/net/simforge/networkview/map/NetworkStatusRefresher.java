@@ -18,7 +18,6 @@ import org.springframework.stereotype.Component;
 import javax.persistence.EntityManager;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -87,9 +86,6 @@ public class NetworkStatusRefresher {
         LocalDateTime reportDt = ReportUtils.fromTimestampJava(networkStatus.getCurrentReport());
         long timeDifferenceSeconds = JavaTime.nowUtc().toEpochSecond(ZoneOffset.UTC) - reportDt.toEpochSecond(ZoneOffset.UTC);
         long timeDifferenceMinutes = timeDifferenceSeconds / 60;
-        log.debug("timeDifferenceSeconds {}, timeDifferenceMinutes {}, timeUnit {}", timeDifferenceSeconds, timeDifferenceMinutes, TimeUnit.MINUTES.toMillis(1));
-
-        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
 
         String statusCode;
         String statusMessage;
@@ -100,23 +96,23 @@ public class NetworkStatusRefresher {
             statusMessage = String.format("%s flights online", networkStatus.getPilotPositions().size());
             switch ((int) timeDifferenceMinutes) {
                 case 0:
-                    statusDetails = String.format("Report %s, it is actual data", timeFormatter.format(reportDt));
+                    statusDetails = String.format("Report %s, it is actual data", JavaTime.yMdHms.format(reportDt));
                     break;
                 case 1:
-                    statusDetails = String.format("Report %s, it is actual data", timeFormatter.format(reportDt));
+                    statusDetails = String.format("Report %s, it is actual data", JavaTime.yMdHms.format(reportDt));
                     break;
                 default:
-                    statusDetails = String.format("Report %s, it is %s minutes behind", timeFormatter.format(reportDt), timeDifferenceMinutes);
+                    statusDetails = String.format("Report %s, it is %s minutes behind", JavaTime.yMdHms.format(reportDt), timeDifferenceMinutes);
                     break;
             }
         } else if (timeDifferenceMinutes < 15) {
             statusCode = "GAP";
             statusMessage = String.format("%s flights online", networkStatus.getPilotPositions().size());
-            statusDetails = String.format("It seems like there is a GAP in reports. Last report %s, it is %s minutes behind", timeFormatter.format(reportDt), timeDifferenceMinutes);
+            statusDetails = String.format("It seems like there is a GAP in reports. Last report %s, it is %s minutes behind", JavaTime.yMdHms.format(reportDt), timeDifferenceMinutes);
         } else {
             statusCode = "OUTDATED";
             statusMessage = "Outdated positions";
-            statusDetails = String.format("Data feed is down most probably. Last report %s, it is %s minutes behind", timeFormatter.format(reportDt), timeDifferenceMinutes);
+            statusDetails = String.format("Data feed is down most probably. Last report %s, it is %s minutes behind", JavaTime.yMdHms.format(reportDt), timeDifferenceMinutes);
         }
 
         networkStatus.setCurrentStatusCode(statusCode);
